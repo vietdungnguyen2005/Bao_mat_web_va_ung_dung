@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# python manage.py makemigrations
+
 #     _  _                        __   __
 #  __| |(_)__ _ _ _  __ _ ___   _ \ \ / /
 # / _` || / _` | ' \/ _` / _ \_| ' \ V /

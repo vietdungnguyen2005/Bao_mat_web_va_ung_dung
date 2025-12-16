@@ -19,9 +19,11 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import models
 
+def get_default_due_date():
+    return timezone.now() + datetime.timedelta(weeks=1)
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.CharField(max_length=3000, default="")
     reset_token = models.CharField(max_length=7, default="")
     reset_token_expiration = models.DateTimeField(default=timezone.now)
@@ -30,12 +32,17 @@ class Project(models.Model):
     title = models.CharField(max_length=50, default='Default')
     text = models.CharField(max_length=500)
     start_date = models.DateTimeField('date started')
+    # due_date = models.DateTimeField(
+    #     'date due',
+    #     default=(
+    #         timezone.now() +
+    #         datetime.timedelta(
+    #             weeks=1)))
+
     due_date = models.DateTimeField(
         'date due',
-        default=(
-            timezone.now() +
-            datetime.timedelta(
-                weeks=1)))
+        default=get_default_due_date
+    )
     users_assigned = models.ManyToManyField(User)
     priority = models.IntegerField(default=1)
 
@@ -59,17 +66,23 @@ class Project(models.Model):
 
 
 class Task(models.Model):
-    project = models.ForeignKey(Project, default=1)
+    project = models.ForeignKey(Project, default=1, on_delete=models.CASCADE)
     text = models.CharField(max_length=200)
     title = models.CharField(max_length=200, default="N/A")
     start_date = models.DateTimeField('date created')
+    # due_date = models.DateTimeField(
+    #     'date due',
+    #     default=(
+    #         timezone.now() +
+    #         datetime.timedelta(
+    #             weeks=1)))
+
     due_date = models.DateTimeField(
         'date due',
-        default=(
-            timezone.now() +
-            datetime.timedelta(
-                weeks=1)))
-    completed = models.NullBooleanField(default=False)
+        default=get_default_due_date
+    )
+    # completed = models.NullBooleanField(default=False)
+    completed = models.BooleanField(null=True)
     users_assigned = models.ManyToManyField(User)
 
     def __str__(self):
@@ -86,7 +99,7 @@ class Task(models.Model):
 
 
 class Notes(models.Model):
-    task = models.ForeignKey(Task, default=1)
+    task = models.ForeignKey(Task, default=1, on_delete=models.CASCADE)
     title = models.CharField(max_length=200, default="N/A")
     text = models.CharField(max_length=200)
     image = models.CharField(max_length=200)
@@ -97,7 +110,7 @@ class Notes(models.Model):
 
 
 class File(models.Model):
-    project = models.ForeignKey(Project)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     name = models.CharField(max_length=300, default="")
     path = models.CharField(max_length=3000, default="")
 
