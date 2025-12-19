@@ -64,3 +64,7 @@ db.sqlite3
 
 # Uploaded files
  uploads/
+
+# Security logs
+logs/
+*.log

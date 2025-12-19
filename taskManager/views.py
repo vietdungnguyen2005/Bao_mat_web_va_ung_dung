@@ -875,12 +875,16 @@ import datetime
 import mimetypes
 import os
 import codecs
+import logging
 
 # Xóa render_to_response, RequestContext vì không còn dùng/cần thiết
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db import connection
+
+# Security logger
+security_logger = logging.getLogger('security')
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -997,7 +1001,10 @@ def manage_groups(request):
                     return redirect('/taskManager/', {'permission': False})
                 specified_user.groups.add(grp)
                 specified_user.save()
-                
+                security_logger.info(
+                    f"User group changed | Target User: {specified_user.username} | Group: {accesslevel} | "
+                    f"Changed by: {request.user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+                )
                 # Sửa: dùng render
                 return render(request,
                     'taskManager/manage_groups.html',
@@ -1039,6 +1046,11 @@ def upload(request, project_id):
         if form.is_valid():
             name = request.POST.get('name', False)
             upload_path = store_uploaded_file(name, request.FILES['file'])
+            
+            security_logger.info(
+                f"File uploaded | File: {name} | Project ID: {project_id} | User: {request.user.username if request.user.is_authenticated else 'anonymous'} | "
+                f"IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
 
             #A1 - Injection (SQLi)
             curs = connection.cursor()
@@ -1063,6 +1075,10 @@ def upload(request, project_id):
 def download(request, file_id):
 
     file = File.objects.get(pk=file_id)
+    security_logger.info(
+        f"File download | File: {file.name} (ID: {file_id}) | User: {request.user.username if request.user.is_authenticated else 'anonymous'} | "
+        f"IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+    )
     abspath = open(
         os.path.dirname(
             os.path.realpath(__file__)) +
@@ -1242,6 +1258,10 @@ def project_delete(request, project_id):
 
 
 def logout_view(request):
+    username = request.user.username if request.user.is_authenticated else 'anonymous'
+    security_logger.info(
+        f"User logout | User: {username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+    )
     logout(request)
     return redirect(request.GET.get('redirect', '/taskManager/'))
 
@@ -1256,17 +1276,32 @@ def login(request):
             if user is not None:
                 if user.is_active:
                     auth_login(request, user)
+                    # Log successful login
+                    security_logger.info(
+                        f"Successful login | User: {username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')} | "
+                        f"User-Agent: {request.META.get('HTTP_USER_AGENT', 'unknown')[:100]}"
+                    )
                     # Redirect to a success page.
                     return redirect('/taskManager/')
                 else:
                     # Return a 'disabled account' error message
+                    security_logger.warning(
+                        f"Login attempt with disabled account | User: {username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+                    )
                     return redirect('/taskManager/', {'disabled_user': True})
             else:
                 # Return an 'invalid login' error message.
+                security_logger.warning(
+                    f"Failed login attempt - Invalid password | User: {username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')} | "
+                    f"User-Agent: {request.META.get('HTTP_USER_AGENT', 'unknown')[:100]}"
+                )
                 return render(request,
                               'taskManager/login.html',
                               {'failed_login': False})
         else:
+            security_logger.warning(
+                f"Failed login attempt - Invalid username | Username: {username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
             return render(request,
                           'taskManager/login.html',
                           {'invalid_username': False})
@@ -1303,11 +1338,20 @@ def register(request):
             user.userProfile.save()
             user.save()
 
+            # Log successful registration
+            security_logger.info(
+                f"New user registered | Username: {user.username} | Email: {user.email} | "
+                f"IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
+
             # Update our variable to tell the template registration was
             # successful.
             registered = True
 
         else:
+            security_logger.warning(
+                f"Failed registration attempt | Errors: {user_form.errors} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
             print(user_form.errors)
 
     # Not a HTTP POST, so we render our form using two ModelForm instances.
@@ -1384,6 +1428,10 @@ def project_details(request, project_id):
         proj = Project.objects.get(pk=project_id)
         user_can_edit = request.user.has_perm('project_edit')
 
+        security_logger.info(
+            f"Project access | Project: {proj.title} (ID: {project_id}) | User: {request.user.username} | "
+            f"IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+        )
         return render(request, 'taskManager/project_details.html',
                       {'proj': proj, 'user_can_edit': user_can_edit})
 
@@ -1613,12 +1661,18 @@ def reset_password(request):
             userprofile = UserProfile.objects.get(reset_token = reset_token)
             if timezone.now() > userprofile.reset_token_expiration:
                 # Reset the token and move on
+                security_logger.warning(
+                    f"Password reset failed - Token expired | User: {userprofile.user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+                )
                 userprofile.reset_token_expiration = timezone.now()
                 userprofile.reset_token = ''
                 userprofile.save()
                 return redirect('/taskManager/')
 
         except UserProfile.DoesNotExist:
+            security_logger.warning(
+                f"Password reset failed - Invalid token | Token: {reset_token[:10]}... | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
             messages.warning(request, 'Invalid password reset token')
             return render(request, 'taskManager/reset_password.html')
 
@@ -1635,6 +1689,9 @@ def reset_password(request):
         userprofile.user.save()
         userprofile.save()
 
+        security_logger.info(
+            f"Password reset successfully | User: {userprofile.user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+        )
         messages.success(request, 'Password has been successfully reset')
         return redirect('/taskManager/login')
 
@@ -1673,6 +1730,9 @@ def forgot_password(request):
                 "Reset your password",
                 "You can reset your password at /taskManager/reset_password/. Use \"{}\" as your token. This link will only work for 10 minutes.".format(reset_token))
 
+            security_logger.info(
+                f"Password reset requested | User: {reset_user.username} | Email: {t_email} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
             messages.success(request, 'Check your email for a reset token')
             return redirect('/taskManager/reset_password')
         except User.DoesNotExist:
@@ -1695,10 +1755,19 @@ def change_password(request):
             if new_password == confirm_password:
                 user.set_password(new_password)
                 user.save()
+                security_logger.info(
+                    f"Password changed successfully | User: {user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+                )
                 messages.success(request, 'Password Updated')
             else:
+                security_logger.warning(
+                    f"Password change failed - Passwords mismatch | User: {user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+                )
                 messages.warning(request, 'Passwords do not match')
         else:
+            security_logger.warning(
+                f"Password change failed - Invalid old password | User: {user.username} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
             messages.warning(request, 'Invalid Password')
 
     return render(request,
