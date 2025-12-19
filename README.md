@@ -113,7 +113,7 @@ python manage.py loaddata fixtures/taskManagerNotes.json
 python manage.py runserver
 ```
 
-Sau đó, bạn có thể truy cập ứng dụng web tại: `http://localhost:8000/`
+Sau đó, bạn có thể truy cập ứng dụng web tại: `http://127.0.0.1:8000/`
 
 ## Tutorials
 

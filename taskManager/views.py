@@ -1705,7 +1705,9 @@ def change_password(request):
                   'taskManager/change_password.html',
                   {'user': request.user})
 
+from django.contrib.auth.decorators import user_passes_test
 
+@user_passes_test(lambda u: u.is_superuser)
 def tm_settings(request):
     settings_list = request.META
     return render(request,

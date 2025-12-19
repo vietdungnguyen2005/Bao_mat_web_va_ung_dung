@@ -54,14 +54,14 @@
                 <!-- user login dropdown start-->
                 <li class="dropdown">
                     <a data-toggle="dropdown" class="dropdown-toggle" href="#">
-                        <!--A3: Cross Site Scripting (XSS) -->
-                        <span class="username"><i class="fa fa-user fa-fw"></i> {{ user.username|safe }}</span>
+                        <span class="username"><i class="fa fa-user fa-fw"></i> {{ user.username }}</span>
                         <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu extended logout">
                         <li><a href="/taskManager/profile"><i class="fa fa-cog"></i>Profile</a></li>
                         <li><a href="/taskManager/change_password"><i class="fa fa-lock"></i>Change PW</a></li>
-                        <li><a href="/taskManager/logout?redirect=/taskManager/"><i class="fa fa-sign-out"></i>Log Out</a></li>
+                        <!-- <li><a href="/taskManager/logout?redirect=/taskManager/"><i class="fa fa-sign-out"></i>Log Out</a></li> -->
+                        <li><a href="/taskManager/logout"><i class="fa fa-sign-out"></i>Log Out</a></li>
                     </ul>
                 </li>
 
