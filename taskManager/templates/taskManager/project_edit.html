@@ -24,11 +24,11 @@
                   <div class="form-group">
                       <label>Project Priority</label><br />
                       <select name="project_priority">
-                        <option value="5" {% if proj.priority = 5 %}selected="selected"{% endif %}>(!!) SUPER URGENT</option>
-                        <option value="4" {% if proj.priority = 4 %}selected="selected"{% endif %}>(!) Urgent</option>
-                        <option value="3" {% if proj.priority = 3 %}selected="selected"{% endif %}>High</option>
-                        <option value="2" {% if proj.priority = 2 %}selected="selected"{% endif %}>Medium</option>
-                        <option value="1" {% if proj.priority = 1 %}selected="selected"{% endif %}>Low</option>
+                        <option value="5" {% if proj.priority == 5 %}selected="selected"{% endif %}>(!!) SUPER URGENT</option>
+                        <option value="4" {% if proj.priority == 4 %}selected="selected"{% endif %}>(!) Urgent</option>
+                        <option value="3" {% if proj.priority == 3 %}selected="selected"{% endif %}>High</option>
+                        <option value="2" {% if proj.priority == 2 %}selected="selected"{% endif %}>Medium</option>
+                        <option value="1" {% if proj.priority == 1 %}selected="selected"{% endif %}>Low</option>
                       </select>
                   </div>
                   <div class="form-group">
