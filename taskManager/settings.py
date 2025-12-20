@@ -1,37 +1,29 @@
-#     _  _                        __   __
-#  __| |(_)__ _ _ _  __ _ ___   _ \ \ / /
-# / _` || / _` | ' \/ _` / _ \_| ' \ V /
-# \__,_|/ \__,_|_||_\__, \___(_)_||_\_/
-#     |__/          |___/
-#
-#           INSECURE APPLICATION WARNING
-#
-# django.nV is a PURPOSELY INSECURE web-application
-# meant to demonstrate Django security problems
-# UNDER NO CIRCUMSTANCES should you take any code
-# from django.nV for use in another web application!
-#
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# settings.py - PHIÊN BẢN ĐÃ BẢO MẬT (SECURE)
 import os
+from pathlib import Path
+from dotenv import load_dotenv 
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+env_path = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path=env_path)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
+# ==============================================================================
+# A02 & A05: FIX BẢO MẬT CẤU HÌNH (CONFIGURATION HARDENING)
+# ==============================================================================
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '0yxzudryd8)-%)(fz&7q-!v&cq1u6vbfoc4u7@u_&i)b@4eh^q'
+# FIX A02: Không hardcode Secret Key. Lấy từ biến môi trường.
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# A5: Security Misconfiguration
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# TEMPLATE_DEBUG = True
+# FIX A05: Tắt Debug mode trên môi trường Production.
+# Lưu ý: os.getenv trả về chuỗi, cần so sánh để lấy giá trị Boolean.
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+# Khi tắt Debug, bắt buộc phải khai báo ALLOWED_HOSTS
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
 
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,27 +33,20 @@ INSTALLED_APPS = (
     'taskManager'
 )
 
-#MIDDLEWARE_CLASSES = (
-MIDDLEWARE = (
+# Cập nhật cho Django 5.0 (Dùng list thay vì tuple cho dễ nhìn)
+MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+]
 
 ROOT_URLCONF = 'taskManager.urls'
-
 WSGI_APPLICATION = 'taskManager.wsgi.application'
 
-FILE_UPLOAD_HANDLERS = (
-    "django.core.files.uploadhandler.TemporaryFileUploadHandler",)
-
 # Database
-# https://docs.djangoproject.com/en/1.7/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -69,33 +54,26 @@ DATABASES = {
     }
 }
 
+# ==============================================================================
+# FIX A02: XÓA BỎ THUẬT TOÁN BĂM MD5
+# ==============================================================================
+# Code cũ ép dùng MD5PasswordHasher (Kém an toàn).
+# Đã XÓA dòng PASSWORD_HASHERS để Django tự dùng PBKDF2 (Mặc định an toàn).
+
+
 # Internationalization
-# https://docs.djangoproject.com/en/1.7/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
-#USE_L10N = True
-
 USE_TZ = True
 
-MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.7/howto/static-files/
-
+# Static files
 STATIC_URL = '/static/'
-
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
-    '/var/www/static/',
 )
 
-# TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
-
+# Templates (Cấu hình chuẩn cho Django hiện đại)
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -113,23 +91,45 @@ TEMPLATES = [
 ]
 
 LOGIN_URL = '/taskManager/login/'
-
-# A6: Sensitive Data Exposure
-PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
-
-# A2: Broken Auth and Session Management
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
-
-EMAIL_PORT = 1025
-
-# Needs compatibility with older Django!
-# SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
-SESSION_COOKIE_HTTPONLY = False
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 LOGOUT_REDIRECT_URL = '/taskManager/'
 
-# Security Logging Configuration
+# ==============================================================================
+# FIX A02 & A05: CẤU HÌNH SESSION & COOKIE AN TOÀN
+# ==============================================================================
+
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+
+# FIX: Chặn Javascript đọc Cookie (Chống XSS lấy cắp phiên)
+SESSION_COOKIE_HTTPONLY = True 
+
+# Chỉ bật các tính năng này khi chạy thật (DEBUG = False) để tránh lỗi localhost
+if not DEBUG:
+    # Chỉ gửi cookie qua kết nối HTTPS an toàn
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Ép buộc chuyển hướng HTTP sang HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # HSTS: Ép trình duyệt ghi nhớ dùng HTTPS trong 1 năm
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Chống tấn công Clickjacking
+    X_FRAME_OPTIONS = 'DENY'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+EMAIL_PORT = 1025
+
+# ==============================================================================
+# LOGGING CONFIGURATION (Giữ nguyên của bạn vì nó khá tốt)
+# ==============================================================================
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -170,8 +170,3 @@ LOGGING = {
         },
     },
 }
-
-# Tạo thư mục logs nếu chưa tồn tại
-LOGS_DIR = os.path.join(BASE_DIR, 'logs')
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
