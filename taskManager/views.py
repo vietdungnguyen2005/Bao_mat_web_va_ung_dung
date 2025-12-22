@@ -11,6 +11,7 @@ import datetime
 import mimetypes
 import os
 import logging
+import secrets
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden, Http404
@@ -578,32 +579,56 @@ def profile(request):
 
 @login_required
 def profile_by_id(request, user_id):
-    user = get_object_or_404(User, pk=user_id)
+    target_user = get_object_or_404(User, pk=user_id)
     
-    # FIX A01: Chỉ được sửa profile của chính mình
-    if request.user != user and not request.user.is_superuser:
+    # FIX A01: Chỉ được sửa profile của chính mình (trừ khi là superuser)
+    if request.user != target_user and not request.user.is_superuser:
         return HttpResponseForbidden("Bạn không thể sửa hồ sơ của người khác.")
 
     if request.method == 'POST':
+        # Dùng Form để validate dữ liệu đầu vào (bao gồm cả file ảnh)
+        # Lưu ý: ProfileForm trong forms.py đã được thêm validator chặn file độc
         form = ProfileForm(request.POST, request.FILES)
+        
         if form.is_valid():
+            # Cập nhật thông tin text
             if request.POST.get('first_name'):
-                user.first_name = request.POST.get('first_name')
+                target_user.first_name = request.POST.get('first_name')
             if request.POST.get('last_name'):
-                user.last_name = request.POST.get('last_name')
+                target_user.last_name = request.POST.get('last_name')
             if request.POST.get('email'):
-                user.email = request.POST.get('email')
+                target_user.email = request.POST.get('email')
             
-            # Xử lý upload ảnh an toàn
+            # Xử lý đổi mật khẩu (nếu có nhập)
+            new_pass = request.POST.get('password')
+            if new_pass:
+                target_user.set_password(new_pass)
+
+            # --- KHÔI PHỤC LOGIC UPLOAD ẢNH (Đã vá lỗi A03) ---
             if request.FILES.get('picture'):
-                # Dùng cleaned_data['picture'] để qua validator
-                # (Lưu ý: ProfileForm cần có validator như đã sửa ở forms.py)
-                pass 
+                # Lấy file từ request
+                uploaded_pic = request.FILES['picture']
+                
+                # Tạo tên file an toàn: username_filename
+                # store_uploaded_file (trong misc.py) đã có cơ chế làm sạch tên file
+                safe_filename = f"{target_user.username}_{uploaded_pic.name}"
+                
+                # Lưu file và lấy đường dẫn
+                file_path = store_uploaded_file(safe_filename, uploaded_pic)
+                
+                # Lưu đường dẫn vào UserProfile
+                # Dùng get_or_create để tránh lỗi nếu user cũ chưa có profile
+                profile, created = UserProfile.objects.get_or_create(user=target_user)
+                profile.image = file_path
+                profile.save()
 
-            user.save()
-            messages.info(request, "User Updated")
+            target_user.save()
+            messages.info(request, "Cập nhật hồ sơ thành công!")
+        else:
+            # Nếu form không hợp lệ (ví dụ upload file .exe)
+            messages.warning(request, "Dữ liệu không hợp lệ hoặc file không đúng định dạng.")
 
-    return render(request, 'taskManager/profile.html', {'user': user})
+    return render(request, 'taskManager/profile.html', {'user': target_user})
 
 def reset_password(request):
     if request.method == 'POST':
@@ -635,9 +660,41 @@ def reset_password(request):
 def forgot_password(request):
     if request.method == 'POST':
         t_email = request.POST.get('email')
-        # ... (Giữ logic gửi mail cũ, nhưng lưu ý token vẫn yếu nếu không sửa models.py)
-        # Vì giới hạn code, phần này giữ nguyên logic business nhưng bỏ csrf_exempt
-        pass 
+
+        try:
+            reset_user = User.objects.get(email=t_email)
+
+            # --- FIX A07: Weak Password Reset Token ---
+            # Thay vì dùng os.urandom(6) chỉ ra 6 số (dễ brute-force)
+            # Ta dùng secrets.token_urlsafe(32) -> Ra chuỗi ngẫu nhiên dài, cực khó đoán.
+            # (Làm được điều này là nhờ bạn đã sửa max_length=100 trong models.py)
+            reset_token = secrets.token_urlsafe(32)
+
+            # Xử lý an toàn: Nếu chưa có profile thì tạo mới, có rồi thì lấy ra
+            profile, created = UserProfile.objects.get_or_create(user=reset_user)
+            
+            profile.reset_token = reset_token
+            profile.reset_token_expiration = timezone.now() + datetime.timedelta(minutes=10)
+            profile.save()
+
+            # Gửi email (Logic cũ)
+            reset_user.email_user(
+                "Reset your password",
+                f"You can reset your password at /taskManager/reset_password/. Use \"{reset_token}\" as your token. This link will only work for 10 minutes."
+            )
+
+            security_logger.info(
+                f"Password reset requested | User: {reset_user.username} | Email: {t_email} | IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
+            messages.success(request, 'Check your email for a reset token')
+            return redirect('/taskManager/reset_password')
+
+        except User.DoesNotExist:
+            # FIX: Username Enumeration protection
+            # Dù email không tồn tại, vẫn báo thành công giả để hacker không biết email này có trong hệ thống không.
+            security_logger.warning(f"Password reset attempted for non-existent email: {t_email}")
+            messages.warning(request, 'Check your email for a reset token')
+
     return render(request, 'taskManager/forgot_password.html')
 
 @login_required
