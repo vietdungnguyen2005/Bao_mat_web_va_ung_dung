@@ -19,19 +19,18 @@
 				menuArrowClass: 'sf-arrows'
 			},
 			ios = (function () {
-				var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-				if (ios) {
-					// iOS clicks only bubble as far as body children
-					$(window).load(function () {
-						$('body').children().on('click', $.noop);
-					});
-				}
-				return ios;
-			})(),
-			wp7 = (function () {
-				var style = document.documentElement.style;
-				return ('behavior' in style && 'fill' in style && /iemobile/i.test(navigator.userAgent));
-			})(),
+                var ios = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                if (ios) {
+                    $(window).load(function () {
+                        $('body').children().on('click', $.noop);
+                    });
+                }
+                return ios;
+            })(),
+            wp7 = (function () {
+                var style = document.documentElement.style;
+                return ('behavior' in style && 'fill' in style && window.navigator.msPointerEnabled);
+            })(),
 			toggleMenuClasses = function ($menu, o) {
 				var classes = c.menuClass;
 				if (o.cssArrows) {

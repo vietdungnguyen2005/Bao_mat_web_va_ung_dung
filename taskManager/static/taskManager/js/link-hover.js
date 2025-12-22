@@ -206,31 +206,51 @@
         (this.options.rollingPosition === 'top' || this.options.rollingPosition === 'bottom') ? left_or_top = 'left' : left_or_top = 'top';
         (this.options.doublePosition === 'vertical') ? left_or_top_double = 'left' : left_or_top_double = 'top';
         this.element.find('[data-zl-overlay],[data-zl-ovrolling],[data-zl-ovdouble0],[data-zl-ovdouble1],[data-zl-ovzoom0],[data-zl-ovzoom1],[data-zl-ovzoom2],[data-zl-ovzoom3]').remove();
+        var zlName = ele.element.attr('data-zlname');
+
         switch (this.options.overlayStyle) {
             case 'classic':
-                general_overlay = $('<div data-zl-overlay="zl_overlay_' + ele.element.attr('data-zlname') + '"></div>').css('background', ele.options.overlayBg);
+                // FIX: Tạo div rỗng trước, sau đó dùng .attr() để gán an toàn
+                general_overlay = $('<div></div>')
+                    .attr('data-zl-overlay', 'zl_overlay_' + zlName)
+                    .css('background', ele.options.overlayBg);
                 ele.element.prepend(general_overlay);
                 break;
+
             case 'four':
                 for (var overlay_count = 0; overlay_count <= 3; overlay_count++) {
-                    general_overlay = $('<div data-zl-ovzoom' + overlay_count + '="zl_overlay_' + ele.element.attr('data-zlname') + '"></div>').css({
-                        'background': ele.options.overlayBg,
-                        'top': -this.divHeight,
-                        'left': this.divCalWidth2 * overlay_count
-                    }).fadeTo(100, this.options.overlayOpacity);
-                    ele.element.prepend(general_overlay)
+                    general_overlay = $('<div></div>')
+                        .attr('data-zl-ovzoom' + overlay_count, 'zl_overlay_' + zlName)
+                        .css({
+                            'background': ele.options.overlayBg,
+                            'top': -this.divHeight,
+                            'left': this.divCalWidth2 * overlay_count
+                        }).fadeTo(100, this.options.overlayOpacity);
+                    ele.element.prepend(general_overlay);
                 };
                 break;
+
             case 'rolling':
-                general_overlay = $('<div data-zl-ovrolling="zl_overlay_' + ele.element.attr('data-zlname') + '" style="background:' + ele.options.overlayBg + ';' + left_or_top + ':0;"></div>').css(this.over_pos.plus).fadeTo(100, this.options.overlayOpacity);
+                general_overlay = $('<div></div>')
+                    .attr('data-zl-ovrolling', 'zl_overlay_' + zlName)
+                    .css('background', ele.options.overlayBg)
+                    .css(left_or_top, 0) // Thay thế style="..." bằng .css()
+                    .css(this.over_pos.plus)
+                    .fadeTo(100, this.options.overlayOpacity);
                 ele.element.prepend(general_overlay);
                 break;
+
             case 'double':
                 for (var overlay_count_d = 0; overlay_count_d <= 1; overlay_count_d++) {
-                    general_overlay = $('<div data-zl-ovdouble' + overlay_count_d + '="zl_overlay_' + ele.element.attr('data-zlname') + '" style="background:' + ele.options.overlayBg + ';' + left_or_top_double + ':0;"></div>').css(this.over_double_pos['position' + overlay_count_d]).fadeTo(100, this.options.overlayOpacity);
-                    ele.element.prepend(general_overlay)
+                    general_overlay = $('<div></div>')
+                        .attr('data-zl-ovdouble' + overlay_count_d, 'zl_overlay_' + zlName)
+                        .css('background', ele.options.overlayBg)
+                        .css(left_or_top_double, 0)
+                        .css(this.over_double_pos['position' + overlay_count_d])
+                        .fadeTo(100, this.options.overlayOpacity);
+                    ele.element.prepend(general_overlay);
                 };
-                break
+                break;
         }
     };
     Mate.prototype.startPosition = function (x_or_y, count_pop_label) {

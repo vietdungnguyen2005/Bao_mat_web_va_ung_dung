@@ -1,38 +1,65 @@
-/*---LEFT BAR ACCORDION----*/
+/*---LEFT BAR ACCORDION (Thay thế dcAccordion)----*/
+jQuery('#sidebar .sub-menu > a').click(function () {
+    var last = jQuery('.sub-menu.open', $('#sidebar'));
+    
+    // Nếu bấm vào cái đang mở -> Đóng nó lại
+    last.removeClass("open");
+    jQuery('.arrow', last).removeClass("open");
+    jQuery('.sub', last).slideUp(200);
+    
+    var sub = jQuery(this).next();
+    // Nếu bấm vào cái mới -> Mở nó ra
+    if (sub.is(":visible")) {
+        jQuery('.arrow', jQuery(this)).removeClass("open");
+        jQuery(this).parent().removeClass("open");
+        sub.slideUp(200);
+    } else {
+        jQuery('.arrow', jQuery(this)).addClass("open");
+        jQuery(this).parent().addClass("open");
+        sub.slideDown(200);
+    }
+});
+
+/* Khởi tạo Peity (Thay thế Sparkline) */
 $(function() {
-    $('#nav-accordion').dcAccordion({
-        eventType: 'click',
-        autoClose: true,
-        saveState: true,
-        disableLink: true,
-        speed: 'slow',
-        showCount: false,
-        autoExpand: true,
-//        cookie: 'dcjq-accordion-1',
-        classExpand: 'dcjq-current-parent'
+    // Vẽ biểu đồ đường
+    $(".peity-line").peity("line", {
+        fill: null,
+        stroke: '#4d90fe',
+        width: 100
+    });
+
+    // Vẽ biểu đồ cột
+    $(".peity-bar").peity("bar", {
+        fill: ["#4d90fe"],
+        width: 100
+    });
+
+    // Vẽ biểu đồ tròn
+    $(".peity-pie").peity("pie", {
+        fill: ["#4d90fe", "#d7d7d7"]
     });
 });
 
-// right slidebar
-$(function(){
- $.slidebars();
+/* Toggle Right Sidebar (Thay thế slidebars.min.js) */
+$('.sb-toggle-right').click(function (e) {
+    e.preventDefault(); 
+    $('.sb-slidebar').toggleClass('active');
 });
 
 var Script = function () {
 
-//    sidebar dropdown menu auto scrolling
-
+    // Sidebar dropdown menu auto scrolling (Thay thế scrollTo)
     jQuery('#sidebar .sub-menu > a').click(function () {
         var o = ($(this).offset());
-        diff = 250 - o.top;
-        if(diff>0)
-            $("#sidebar").scrollTo("-="+Math.abs(diff),500);
+        var diff = 250 - o.top;
+        if(diff > 0)
+            $("#sidebar").animate({ scrollTop: '-=' + Math.abs(diff) }, 500);
         else
-            $("#sidebar").scrollTo("+="+Math.abs(diff),500);
+            $("#sidebar").animate({ scrollTop: '+=' + Math.abs(diff) }, 500);
     });
 
-//    sidebar toggle
-
+    // Sidebar toggle (Responsive)
     $(function() {
         function responsiveView() {
             var wSize = $(window).width();
@@ -40,7 +67,6 @@ var Script = function () {
                 $('#container').addClass('sidebar-close');
                 $('#sidebar > ul').hide();
             }
-
             if (wSize > 768) {
                 $('#container').removeClass('sidebar-close');
                 $('#sidebar > ul').show();
@@ -52,33 +78,19 @@ var Script = function () {
 
     $('.fa-bars').click(function () {
         if ($('#sidebar > ul').is(":visible") === true) {
-            $('#main-content').css({
-                'margin-left': '0px'
-            });
-            $('#sidebar').css({
-                'margin-left': '-210px'
-            });
+            $('#main-content').css({'margin-left': '0px'});
+            $('#sidebar').css({'margin-left': '-210px'});
             $('#sidebar > ul').hide();
             $("#container").addClass("sidebar-closed");
         } else {
-            $('#main-content').css({
-                'margin-left': '210px'
-            });
+            $('#main-content').css({'margin-left': '210px'});
             $('#sidebar > ul').show();
-            $('#sidebar').css({
-                'margin-left': '0'
-            });
+            $('#sidebar').css({'margin-left': '0'});
             $("#container").removeClass("sidebar-closed");
         }
     });
 
-// custom scrollbar
-    $("#sidebar").niceScroll({styler:"fb",cursorcolor:"#e8403f", cursorwidth: '3', cursorborderradius: '10px', background: '#404040', spacebarenabled:false, cursorborder: ''});
-
-    $("html").niceScroll({styler:"fb",cursorcolor:"#e8403f", cursorwidth: '6', cursorborderradius: '10px', background: '#404040', spacebarenabled:false,  cursorborder: '', zindex: '1000'});
-
-// widget tools
-
+    // Widget tools
     jQuery('.panel .tools .fa-chevron-down').click(function () {
         var el = jQuery(this).parents(".panel").children(".panel-body");
         if (jQuery(this).hasClass("fa-chevron-down")) {
@@ -90,48 +102,24 @@ var Script = function () {
         }
     });
 
-// by default collapse widget
-
-//    $('.panel .tools .fa').click(function () {
-//        var el = $(this).parents(".panel").children(".panel-body");
-//        if ($(this).hasClass("fa-chevron-down")) {
-//            $(this).removeClass("fa-chevron-down").addClass("fa-chevron-up");
-//            el.slideUp(200);
-//        } else {
-//            $(this).removeClass("fa-chevron-up").addClass("fa-chevron-down");
-//            el.slideDown(200); }
-//    });
-
     jQuery('.panel .tools .fa-times').click(function () {
         jQuery(this).parents(".panel").parent().remove();
     });
 
-
-//    tool tips
-
+    // Tooltips & Popovers
     $('.tooltips').tooltip();
-
-//    popovers
-
     $('.popovers').popover();
 
-
-
-// custom bar chart
-
+    // Custom Bar Chart (Đã sửa XSS)
     if ($(".custom-bar-chart")) {
         $(".bar").each(function () {
-            var i = $(this).find(".value").html();
-            $(this).find(".value").html("");
+            // FIX: Dùng .text() thay vì .html() để chống XSS
+            var i = $(this).find(".value").text();
+            $(this).find(".value").text("");
             $(this).find(".value").animate({
                 height: i
             }, 2000)
         })
     }
-
-
-
-
-
 
 }();

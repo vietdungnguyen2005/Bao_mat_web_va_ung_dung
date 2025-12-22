@@ -1512,41 +1512,10 @@ ul.ft-link li a i {
 }
 
 
-#owl-demo .item img{
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-.owl-buttons {
-    position: absolute;
-    top: 70px;
-    width: 100%;
-
-}
-
-.owl-prev, .owl-next {
-    position: absolute;
-}
-
-.owl-next {
-    right: 0;
-}
-
-.owl-buttons .owl-prev {
-    text-indent: -9999px;
-    background: url("/static/taskManager/img/left-arrow.png") no-repeat;
-    width: 6px;
-    height: 10px;
-    display: inline-block;
-}
-
-.owl-buttons .owl-next {
-    text-indent: -9999px;
-    background: url("/static/taskManager/img/right-arrow.png") no-repeat;
-    width: 6px;
-    height: 10px;
-    display: inline-block;
+#owl-demo {
+    display: flex;
+    overflow-x: auto; /* Cho phép cuộn ngang nếu nhiều ảnh */
+    gap: 10px;        /* Khoảng cách giữa các ảnh */
 }
 
 /*product post*/
@@ -3433,7 +3402,7 @@ table.sliders tr td {
     vertical-align: middle;
     display: inline-block;
     zoom: 1;
-    *display: inline;
+    display: inline;
     -webkit-transition: 0.14s linear;
     -moz-transition: 0.14s linear;
     -o-transition: 0.14s linear;
@@ -3485,11 +3454,12 @@ table.sliders tr td {
     content: "\f00d";
     font-family: "FontAwesome";
 }
+
 .tagsinput-add-container {
     vertical-align: middle;
     display: inline-block;
     zoom: 1;
-    *display: inline;
+    display: inline;
 }
 .tagsinput-add {
     background-color: #d6dbdf;
@@ -3500,7 +3470,7 @@ table.sliders tr td {
     padding: 6px 9px;
     display: inline-block;
     zoom: 1;
-    *display: inline;
+    display: inline;
     -webkit-transition: 0.25s;
     -moz-transition: 0.25s;
     -o-transition: 0.25s;
@@ -5509,10 +5479,33 @@ a.guest-on i {
 /*right side bar*/
 
 .sb-slidebar {
+    /* --- Giữ nguyên Style cũ của bạn --- */
     background-color: rgba(42, 53, 66, 1) !important;
     margin-top: 60px;
-    color:#aeb2b7;
+    color: #aeb2b7;
+    
+    /* --- THÊM CÁC DÒNG NÀY ĐỂ TẠO HIỆU ỨNG TRƯỢT --- */
+    position: fixed;        /* Cố định vị trí */
+    top: 0;
+    right: -300px;          /* Mặc định ẩn sang bên phải (chiều rộng âm) */
+    width: 280px;           /* Chiều rộng của menu */
+    height: 100%;           /* Full chiều cao */
+    z-index: 9999;          /* Nổi lên trên cùng */
+    overflow-y: auto;       /* Cho phép cuộn nếu danh sách chat dài */
+    transition: right 0.3s ease; /* Tạo hiệu ứng trượt mượt mà (Key magic) */
 }
+
+.sb-slidebar.active {
+    right: 0; /* Trượt vào màn hình (vị trí 0) */
+}
+
+/* --- Các đoạn dưới giữ nguyên --- */
+.sb-slidebar .side-title {
+    padding: 10px 15px;
+    text-transform: uppercase;
+    color: #FF6C60;
+}
+
 .sb-slidebar .side-title {
     padding: 10px 15px;
     text-transform: uppercase;

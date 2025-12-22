@@ -167,8 +167,14 @@
 
           if (slider.pagingCount > 1) {
             for (var i = 0; i < slider.pagingCount; i++) {
-              item = (vars.controlNav === "thumbnails") ? '<img src="' + slider.slides.eq(i).attr("data-thumb") + '"/>' : '<a>' + j + '</a>';
-              slider.controlNavScaffold.append('<li>' + item + '</li>');
+              var $li = $('<li></li>');
+              if (vars.controlNav === "thumbnails") {
+                  var thumbUrl = slider.slides.eq(i).attr("data-thumb");
+                  $('<img/>').attr('src', thumbUrl).appendTo($li);
+              } else {
+                  $('<a></a>').text(j).appendTo($li);
+              }
+              slider.controlNavScaffold.append($li);
               j++;
             }
           }

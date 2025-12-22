@@ -508,7 +508,7 @@ ul.about-flex-slides {
     -moz-transform: rotate(45deg);
     -webkit-transform: rotate(45deg);
     width: 15px;
-	display:none\0/;
+	display:none\0;
 	_display:none;
 }
 
@@ -566,6 +566,7 @@ ul.about-flex-slides {
     text-transform: uppercase;
     -webkit-box-shadow: 0 0 1px #000;
     -moz-box-shadow: 0 0 1px #000;
+    box-shadow: 0 0 1px #000;
 }
 
 .view a.info:hover {
@@ -1792,4 +1793,8 @@ ul#filters > .active > span {
 
 .mbot50 {
     margin-bottom: 50px;
+}
+
+html {
+    scroll-behavior: smooth;
 }
