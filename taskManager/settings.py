@@ -13,14 +13,15 @@ load_dotenv(dotenv_path=env_path)
 # ==============================================================================
 
 # FIX A02: Không hardcode Secret Key. Lấy từ biến môi trường.
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+# Fallback cho development (nhưng trên Render BẮT BUỘC phải set biến môi trường)
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-key-change-in-production-!!!!')
 
 # FIX A05: Tắt Debug mode trên môi trường Production.
 # Lưu ý: os.getenv trả về chuỗi, cần so sánh để lấy giá trị Boolean.
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 # Khi tắt Debug, bắt buộc phải khai báo ALLOWED_HOSTS
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '*.onrender.com', 'nt213bmwvud.live', 'www.nt213bmwvud.live', '*']
 
 
 # Application definition
@@ -35,6 +36,8 @@ INSTALLED_APPS = (
 
 # Cập nhật cho Django 5.0 (Dùng list thay vì tuple cho dễ nhìn)
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',  # Thêm cho bảo mật
+    'whitenoise.middleware.WhiteNoiseMiddleware',     # Thêm cho static files trên Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,9 +72,13 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Bắt buộc cho collectstatic trên Render
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+
+# WhiteNoise configuration cho production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Templates (Cấu hình chuẩn cho Django hiện đại)
 TEMPLATES = [
