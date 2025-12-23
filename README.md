@@ -128,13 +128,7 @@ Hoặc click vào link "Tutorials" ở góc trên bên phải của giao diện 
 
 ## Mail Server
 
-Ứng dụng chỉ gửi email cho tính năng "Forgot Password". Vì Python 3.12 đã loại bỏ module `smtpd`, chúng ta sử dụng `aiosmtpd` (đã có trong requirements.txt):
-
-```bash
-python -m aiosmtpd -n -l localhost:1025
-```
-
-Nếu muốn sử dụng mailserver riêng, hãy thêm cấu hình vào file `taskManager/settings.py`.
+Sử dụng Mail Server của Google.
 
 ## Kiểm tra phiên bản Django
 
