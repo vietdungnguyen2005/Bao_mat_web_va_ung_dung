@@ -353,13 +353,11 @@ def project_delete(request, project_id):
     
     return HttpResponseForbidden("Bạn không có quyền xóa dự án này.")
 
-# --- FIX A10: OPEN REDIRECT ---
 def logout_view(request):
     username = request.user.username if request.user.is_authenticated else 'anonymous'
     security_logger.info(f"User logout | User: {username}")
     
     logout(request)
-    # FIX A10: Luôn redirect về trang chủ, bỏ qua tham số 'redirect' từ URL
     return redirect('/taskManager/')
 
 def login(request):

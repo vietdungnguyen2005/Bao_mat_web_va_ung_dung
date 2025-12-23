@@ -1,20 +1,15 @@
 """ forms.py contains various Django forms for the application """
 
-import os
+from taskManager.models import Project, Task
 from django import forms
 from django.contrib.auth.models import User
-from taskManager.models import Project, Task
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+import re
 
-# --- FIX A03: Thêm hàm kiểm tra đuôi file (Input Validation) ---
-def validate_file_extension(value):
-    ext = os.path.splitext(value.name)[1]  # Lấy đuôi file
-    valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.png', '.xlsx', '.xls', '.txt', '.jpeg']
-    if not ext.lower() in valid_extensions:
-        raise ValidationError('File không hợp lệ! Chỉ chấp nhận: pdf, doc, xls, jpg, png, txt.')
-
-# --- Helper Functions (Giữ nguyên logic cũ để tránh lỗi View) ---
 def get_my_choices_users():
+    """ Retrieves a list of all users in the system for the user management page
+    """
     user_list = User.objects.order_by('date_joined')
     user_tuple = []
     counter = 1
@@ -23,12 +18,16 @@ def get_my_choices_users():
         counter = counter + 1
     return user_tuple
 
+
 def get_my_choices_tasks(current_proj):
+    """ Retrieves all tasks in the system for the task management page
+    """
     task_list = []
     tasks = Task.objects.all()
     for task in tasks:
         if task.project == current_proj:
             task_list.append(task)
+
     task_tuple = []
     counter = 1
     for task in task_list:
@@ -36,7 +35,10 @@ def get_my_choices_tasks(current_proj):
         counter = counter + 1
     return task_tuple
 
+
 def get_my_choices_projects():
+    """ Retrieves all projects in the system for the project management page
+    """
     proj_list = Project.objects.all()
     proj_tuple = []
     counter = 1
@@ -45,32 +47,64 @@ def get_my_choices_projects():
         counter = counter + 1
     return proj_tuple
 
-
-# --- FIX A01: MASS ASSIGNMENT ---
 class UserForm(forms.ModelForm):
-    """ User registration form """
-    password = forms.CharField(widget=forms.PasswordInput()) # Ẩn password khi nhập
+    password = forms.CharField(widget=forms.PasswordInput())
 
     class Meta:
         model = User
-        # FIX: Thay vì dùng exclude (loại trừ), ta dùng fields (whitelist).
-        # Chỉ cho phép người dùng nhập đúng 5 trường này.
-        # Các trường nguy hiểm như is_superuser, is_staff sẽ bị chặn.
-        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+        exclude = ['groups', 'user_permissions', 'last_login', 'date_joined', 'is_active', 'superuser', 'staff']
 
+    def clean_password(self):
+        data = self.cleaned_data.get('password')
+        if data:
+            if len(data) < 8:
+                raise ValidationError("Mật khẩu quá ngắn (tối thiểu 8 ký tự).")
+            
+            # Kiểm tra độ khó: Phải có chữ thường, hoa, số, ký tự đặc biệt
+            if not re.match(r'^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).+$', data):
+                raise ValidationError("Mật khẩu yếu! Cần có: chữ hoa, thường, số và ký tự đặc biệt.")
+        return data
 
-# --- FIX A03: INPUT VALIDATION (FILE UPLOAD) ---
 class ProjectFileForm(forms.Form):
     """ Used for uploading files attached to projects """
     name = forms.CharField(max_length=300)
-    # FIX: Thêm validators để chặn file mã độc (.exe, .sh, .py...)
-    file = forms.FileField(validators=[validate_file_extension])
-
+    file = forms.FileField()
 
 class ProfileForm(forms.Form):
-    """ Provides a form for editing your own profile """
+
     first_name = forms.CharField(max_length=30, required=False)
     last_name = forms.CharField(max_length=30, required=False)
-    email = forms.CharField(max_length=300, required=False)
-    # FIX: Thêm validators cho ảnh đại diện
-    picture = forms.FileField(required=False, validators=[validate_file_extension])
+    email = forms.EmailField(max_length=300, required=False) 
+    
+    picture = forms.FileField(
+        required=False,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
+    )
+    
+    def clean_first_name(self):
+        data = self.cleaned_data['first_name']
+        if data:
+            if not re.match(r'^[a-zA-Z\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]*$', data):
+                raise ValidationError("Tên không được chứa ký tự đặc biệt (Script, thẻ HTML...).")
+        return data
+
+    def clean_last_name(self):
+        data = self.cleaned_data['last_name']
+        if data:
+            if not re.match(r'^[a-zA-Z\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]*$', data):
+                raise ValidationError("Họ không được chứa ký tự đặc biệt.")
+        return data
+
+    def clean_picture(self):
+        picture = self.cleaned_data.get('picture')
+        
+        if picture:
+            if picture.size > 2 * 1024 * 1024:
+                raise ValidationError("File ảnh quá lớn (tối đa 2MB).")
+
+            if hasattr(picture, 'content_type'):
+                main_type = picture.content_type.split('/')[0]
+                if main_type != 'image':
+                    raise ValidationError("File tải lên không phải là ảnh hợp lệ.")
+                
+        return picture
