@@ -21,7 +21,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-key-change-in-production
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 # Khi tắt Debug, bắt buộc phải khai báo ALLOWED_HOSTS
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '*.onrender.com', 'nt213bmwvud.live', 'www.nt213bmwvud.live', '*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '*.onrender.com', 'nt213bmwvud.me', 'www.nt213bmwvud.me', '*']
 
 
 # Application definition
