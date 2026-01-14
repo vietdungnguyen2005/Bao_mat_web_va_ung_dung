@@ -52,7 +52,7 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        exclude = ['groups', 'user_permissions', 'last_login', 'date_joined', 'is_active', 'superuser', 'staff']
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
 
     def clean_password(self):
         data = self.cleaned_data.get('password')
