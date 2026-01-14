@@ -7,15 +7,16 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 import re
 
-def get_my_choices_users():
-    """ Retrieves a list of all users in the system for the user management page
-    """
-    user_list = User.objects.order_by('date_joined')
+def get_my_choices_users(user):
+    accessible_projects = Project.objects.filter(users=user)
+    
+    user_list = User.objects.filter(taskmanager_project__in=accessible_projects).distinct()
+    
     user_tuple = []
     counter = 1
-    for user in user_list:
-        user_tuple.append((counter, user))
-        counter = counter + 1
+    for u in user_list:
+        user_tuple.append((counter, u))
+        counter += 1
     return user_tuple
 
 
@@ -36,15 +37,14 @@ def get_my_choices_tasks(current_proj):
     return task_tuple
 
 
-def get_my_choices_projects():
-    """ Retrieves all projects in the system for the project management page
-    """
-    proj_list = Project.objects.all()
+def get_my_choices_projects(user):
+    proj_list = Project.objects.filter(users=user)
+    
     proj_tuple = []
     counter = 1
     for proj in proj_list:
         proj_tuple.append((counter, proj))
-        counter = counter + 1
+        counter += 1
     return proj_tuple
 
 class UserForm(forms.ModelForm):
