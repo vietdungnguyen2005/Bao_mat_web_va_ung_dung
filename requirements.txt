@@ -5,3 +5,4 @@ tzdata; sys_platform == 'win32'
 aiosmtpd
 python-dotenv
 gunicorn
+whitenoise
